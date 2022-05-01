@@ -1,11 +1,17 @@
+using System.Security.Claims;
 using CleanArchitecture.Application;
 using CleanArchitecture.Application.Common.Interfaces;
+using CleanArchitecture.Application.Common.Models;
+using CleanArchitecture.Application.WeatherForecasts.Queries.GetWeatherForecasts;
 using CleanArchitecture.Infrastructure;
 using CleanArchitecture.Infrastructure.Persistence;
 using CleanArchitecture.WebUI.Filters;
 using CleanArchitecture.WebUI.Services;
+using CQRSBridge;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
@@ -29,6 +35,24 @@ public class Startup
         services.AddDatabaseDeveloperPageExceptionFilter();
 
         services.AddSingleton<ICurrentUserService, CurrentUserService>();
+
+        string domain = $"https://{Configuration["Auth0:Domain"]}/";
+        string audiance = Configuration["Auth0:Audience"];
+        Console.WriteLine(domain);
+        Console.WriteLine(audiance);
+
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.Authority = domain;
+                options.Audience = audiance;
+            // If the access token does not have a `sub` claim, `User.Identity.Name` will be `null`. Map it to a different claim by setting the NameClaimType below.
+            options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    NameClaimType = ClaimTypes.NameIdentifier
+                };
+            });
 
         services.AddHttpContextAccessor();
 
@@ -80,24 +104,39 @@ public class Startup
         }
 
         app.UseHealthChecks("/health");
-        app.UseHttpsRedirection();
+
+
         app.UseStaticFiles();
-        if (!env.IsDevelopment())
+        if (env.IsDevelopment())
         {
+
+           
+
+            app.UseCors(options =>
+            {
+                options.AllowAnyOrigin();
+                options.AllowAnyHeader();
+                options.AllowAnyMethod();
+
+            });
+
+
+
+        }
+        else
+        {
+            app.UseHttpsRedirection();
             app.UseSpaStaticFiles();
         }
-
-        app.UseSwaggerUi3(settings =>
-        {
-            settings.Path = "/api";
-            settings.DocumentPath = "/api/specification.json";
-        });
+        
+    
 
         app.UseRouting();
 
         app.UseAuthentication();
-        app.UseIdentityServer();
+        
         app.UseAuthorization();
+
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllerRoute(
@@ -106,6 +145,8 @@ public class Startup
             endpoints.MapRazorPages();
         });
 
+        app.UseCQRSBridge(System.Reflection.Assembly.GetAssembly(typeof(GetWeatherForecastsQuery)));
+
         app.UseSpa(spa =>
         {
                 // To learn more about options for serving an Angular SPA from ASP.NET Core,
@@ -113,11 +154,7 @@ public class Startup
 
                 spa.Options.SourcePath = "ClientApp";
 
-            if (env.IsDevelopment())
-            {
-                    //spa.UseAngularCliServer(npmScript: "start");
-                    spa.UseProxyToSpaDevelopmentServer(Configuration["SpaBaseUrl"] ?? "http://localhost:4200");
-            }
+         
         });
     }
 }

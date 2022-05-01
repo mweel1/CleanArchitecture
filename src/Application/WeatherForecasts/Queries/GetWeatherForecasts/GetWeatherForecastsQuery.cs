@@ -1,7 +1,12 @@
-﻿using MediatR;
+﻿using CleanArchitecture.Application.Common.Security;
+using CQRSBridge.Attribute;
+using MediatR;
 
 namespace CleanArchitecture.Application.WeatherForecasts.Queries.GetWeatherForecasts;
 
+
+[CommandName("WeatherForecast~GetWeatherForecast")]
+[Authorize]
 public class GetWeatherForecastsQuery : IRequest<IEnumerable<WeatherForecast>>
 {
 }

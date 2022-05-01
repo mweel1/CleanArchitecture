@@ -1,4 +1,4 @@
-using CleanArchitecture.Infrastructure.Identity;
+
 using CleanArchitecture.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,15 +19,14 @@ public class Program
             {
                 var context = services.GetRequiredService<ApplicationDbContext>();
 
+                
+
                 if (context.Database.IsSqlServer())
                 {
                     context.Database.Migrate();
                 }
 
-                var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-                await ApplicationDbContextSeed.SeedDefaultUserAsync(userManager, roleManager);
+           
                 await ApplicationDbContextSeed.SeedSampleDataAsync(context);
             }
             catch (Exception ex)

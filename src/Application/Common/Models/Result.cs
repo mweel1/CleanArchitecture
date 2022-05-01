@@ -1,24 +1,13 @@
 ﻿namespace CleanArchitecture.Application.Common.Models;
 
-public class Result
+public class Result<T>
 {
-    internal Result(bool succeeded, IEnumerable<string> errors)
-    {
-        Succeeded = succeeded;
-        Errors = errors.ToArray();
-    }
+    public bool IsSuccess { get; private set; }
+    public T Value { get; private set; }
+    public string[] Errors { get; private set; }
 
-    public bool Succeeded { get; set; }
+    private Result() { }
 
-    public string[] Errors { get; set; }
-
-    public static Result Success()
-    {
-        return new Result(true, Array.Empty<string>());
-    }
-
-    public static Result Failure(IEnumerable<string> errors)
-    {
-        return new Result(false, errors);
-    }
+    public static Result<T> Success(T value) => new Result<T>() { IsSuccess = true, Value = value };
+    public static Result<T> Failure(params string[] errors) => new Result<T>() { IsSuccess = false, Errors = errors };
 }
